@@ -1,8 +1,8 @@
 """
 parameters.py
 
-Central configuration file for the MedNIST Autoencoder project.
-Defines training, data, and model architecture parameters.
+Optimized configuration for MedNIST Autoencoder.
+Improves reconstruction quality and training stability.
 """
 
 from dataclasses import dataclass, field
@@ -14,50 +14,54 @@ import os
 @dataclass
 class MedNISTConfig:
     # ===== General =====
-    seed: int = 0
+    seed: int = 42
     data_dir: str = "./data/MedNIST"
     download: bool = True
-    save_dir: str = "./1"  # all results and model saved here
+    save_dir: str = "./results_best"
 
     # ===== Data =====
     image_size: int = 64
     min_intensity: float = 0.0
     max_intensity: float = 1.0
-    train_valid_ratio: float = 0.8
-    batch_size: int = 64
+    train_valid_ratio: float = 0.85
+    batch_size: int = 128
     num_workers: int = 4
     persistent_workers: bool = True
 
     # ===== Model architecture =====
-    latent_dim: int = 64
-    encoder_channels: list = field(default_factory=lambda: [1, 32, 64, 128, 256])
-    decoder_channels: list = field(default_factory=lambda: [256, 128, 64, 32, 1])
-    kernel_size: int = 4
+    latent_dim: int = 128
+    encoder_channels: list = field(default_factory=lambda: [1, 32, 64, 128, 256, 512])
+    decoder_channels: list = field(default_factory=lambda: [512, 256, 128, 64, 32, 1])
+    kernel_size: int = 3
     stride: int = 2
     padding: int = 1
-    activation: str = "ReLU"
+    activation: str = "LeakyReLU"
     output_activation: str = "Sigmoid"
 
     # ===== Training =====
-    num_epochs: int = 25
-    learning_rate: float = 1e-3
-    weight_decay: float = 1e-6
+    num_epochs: int = 60
+    learning_rate: float = 3e-4
+    weight_decay: float = 1e-5
     loss_function: str = "MSELoss"
+    scheduler: str = "CosineAnnealingLR"
+    dropout_rate: float = 0.2
+    use_batchnorm: bool = True
 
     # ===== Misc =====
-    labels: list = field(default_factory=lambda: ['AbdomenCT', 'BreastMRI', 'ChestCT', 'CXR', 'Hand', 'HeadCT'])
+    labels: list = field(default_factory=lambda: [
+        'AbdomenCT', 'BreastMRI', 'ChestCT', 'CXR', 'Hand', 'HeadCT'
+    ])
     selected_label: str = "Hand"
     device: torch.device = field(default_factory=lambda: torch.device("cuda" if torch.cuda.is_available() else "cpu"))
 
-    # ===== Utility methods =====
+    # ===== Utility =====
     def summary(self):
-        print("===== MedNIST Autoencoder Configuration =====")
+        print("===== Optimized MedNIST Autoencoder Configuration =====")
         for key, value in self.__dict__.items():
             print(f"{key:20}: {value}")
-        print("=============================================")
+        print("========================================================")
 
     def save(self, filepath: str = None):
-        """Save configuration as a JSON file."""
         if filepath is None:
             filepath = os.path.join(self.save_dir, "config.json")
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
