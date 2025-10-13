@@ -1,15 +1,6 @@
-"""
-parameters.py
-
-Optimized configuration for MedNIST Autoencoder.
-Improves reconstruction quality and training stability.
-"""
-
 from dataclasses import dataclass, field
 import torch
-import json
-import os
-
+import os, json
 
 @dataclass
 class MedNISTConfig:
@@ -17,35 +8,35 @@ class MedNISTConfig:
     seed: int = 42
     data_dir: str = "./data/MedNIST"
     download: bool = True
-    save_dir: str = "./results_best"
+    save_dir: str = "./results_hands_opt"
 
     # ===== Data =====
-    image_size: int = 64
+    image_size: int = 128        # Higher resolution improves detail replication
     min_intensity: float = 0.0
     max_intensity: float = 1.0
-    train_valid_ratio: float = 0.85
-    batch_size: int = 128
+    train_valid_ratio: float = 0.9
+    batch_size: int = 64         # Smaller batch = more gradient precision
     num_workers: int = 4
     persistent_workers: bool = True
 
     # ===== Model architecture =====
-    latent_dim: int = 128
-    encoder_channels: list = field(default_factory=lambda: [1, 32, 64, 128, 256, 512])
-    decoder_channels: list = field(default_factory=lambda: [512, 256, 128, 64, 32, 1])
+    latent_dim: int = 256        # Larger latent space preserves fine structures
+    encoder_channels: list = field(default_factory=lambda: [1, 64, 128, 256, 512, 512])
+    decoder_channels: list = field(default_factory=lambda: [512, 512, 256, 128, 64, 1])
     kernel_size: int = 3
     stride: int = 2
     padding: int = 1
     activation: str = "LeakyReLU"
     output_activation: str = "Sigmoid"
+    dropout_rate: float = 0.1    # Lower dropout improves detail retention
+    use_batchnorm: bool = True
 
     # ===== Training =====
-    num_epochs: int = 60
-    learning_rate: float = 3e-4
-    weight_decay: float = 1e-5
-    loss_function: str = "MSELoss"
+    num_epochs: int = 80         # Longer training for better convergence
+    learning_rate: float = 2e-4  # Slightly lower for stable reconstruction
+    weight_decay: float = 1e-6
+    loss_function: str = "MSELoss"  # You can optionally test "L1Loss" for sharper recon
     scheduler: str = "CosineAnnealingLR"
-    dropout_rate: float = 0.2
-    use_batchnorm: bool = True
 
     # ===== Misc =====
     labels: list = field(default_factory=lambda: [
@@ -56,10 +47,10 @@ class MedNISTConfig:
 
     # ===== Utility =====
     def summary(self):
-        print("===== Optimized MedNIST Autoencoder Configuration =====")
+        print("===== Optimized MedNIST Autoencoder Configuration (Hands) =====")
         for key, value in self.__dict__.items():
             print(f"{key:20}: {value}")
-        print("========================================================")
+        print("===============================================================")
 
     def save(self, filepath: str = None):
         if filepath is None:
