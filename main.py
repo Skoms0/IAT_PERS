@@ -85,9 +85,16 @@ class ConvAutoencoder(nn.Module):
             enc_layers.append(nn.Dropout2d(cfg.dropout_rate))
         self.encoder = nn.Sequential(*enc_layers)
 
+        # Compute final encoder output shape dynamically
+        with torch.no_grad():
+            dummy = torch.zeros(1, 1, cfg.image_size, cfg.image_size)
+            out = self.encoder(dummy)
+            self.enc_shape = out.shape[1:]  # (C, H, W)
+            self.enc_flat = int(np.prod(self.enc_shape))
+
         # --- Latent space ---
-        self.fc1 = nn.Linear(cfg.encoder_channels[-1] * 2 * 2, cfg.latent_dim)
-        self.fc2 = nn.Linear(cfg.latent_dim, cfg.encoder_channels[-1] * 2 * 2)
+        self.fc1 = nn.Linear(self.enc_flat, cfg.latent_dim)
+        self.fc2 = nn.Linear(cfg.latent_dim, self.enc_flat)
 
         # --- Decoder ---
         dec_layers = []
@@ -103,12 +110,19 @@ class ConvAutoencoder(nn.Module):
         self.decoder = nn.Sequential(*dec_layers)
 
     def forward(self, x):
+        orig_size = x.shape[-2:]  # (H, W)
         x = self.encoder(x)
         x = x.view(x.size(0), -1)
         z = self.fc1(x)
         x = self.fc2(z)
-        x = x.view(x.size(0), 512, 2, 2)
-        return self.decoder(x)
+        x = x.view(x.size(0), *self.enc_shape)
+        x = self.decoder(x)
+
+        # 🔧 Force final output to match input spatial size
+        if x.shape[-2:] != orig_size:
+            x = nn.functional.interpolate(x, size=orig_size, mode="bilinear", align_corners=False)
+        return x
+
 
 
 # ======================================================
