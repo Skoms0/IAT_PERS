@@ -1,15 +1,3 @@
-"""
-main.py
-
-Optimized training script for MedNIST Autoencoder.
-Features:
-- BatchNorm + Dropout
-- AdamW optimizer + CosineAnnealingLR
-- Early stopping
-- Gradient clipping
-- Model checkpointing
-"""
-
 import os
 import torch
 import torch.nn as nn
@@ -118,7 +106,7 @@ class ConvAutoencoder(nn.Module):
         x = x.view(x.size(0), *self.enc_shape)
         x = self.decoder(x)
 
-        # 🔧 Force final output to match input spatial size
+        # Force final output to match input spatial size
         if x.shape[-2:] != orig_size:
             x = nn.functional.interpolate(x, size=orig_size, mode="bilinear", align_corners=False)
         return x
@@ -146,7 +134,7 @@ checkpoint_path = os.path.join(cfg.save_dir, "best_model.pth")
 # ======================================================
 train_losses, valid_losses = [], []
 
-print("\n🚀 Starting training...\n")
+print("\n Starting training...\n")
 for epoch in range(cfg.num_epochs):
     model.train()
     train_loss = 0.0
@@ -237,7 +225,7 @@ def show_reconstructions(model, loader, n=8):
 # ======================================================
 # Load Best Model & Evaluate
 # ======================================================
-print("\n🔍 Loading best model and generating reconstructions...")
+print("\nLoading best model and generating reconstructions...")
 model.load_state_dict(torch.load(checkpoint_path))
 show_reconstructions(model, test_loader)
-print("\n✅ Training complete. Best validation loss:", round(best_val_loss, 6))
+print("\nTraining complete. Best validation loss:", round(best_val_loss, 6))
